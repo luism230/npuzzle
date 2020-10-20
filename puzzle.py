@@ -21,7 +21,7 @@ def LoadFromFile(filepath):
 					puzzle.append([])
 				count += 1
 			else:
-				if count >= 3:
+				if count >= n:
 					return None
 				while line != '\n' and len(line)!= 0:
 					if '\t' in line:
@@ -108,6 +108,37 @@ def ComputeNeighbors(state):
 			pairs.append(findPair(state, x, y, x, y-1))
 	return pairs
 
+def isGoal(state):
+	goal = []
+	count= 1
+	n = len(state)
+	for i in range(n):
+		goal.append([])
+		for j in range(n):
+			if count == n*n:
+				goal[i].append('*')
+			else:
+				goal[i].append(str(count))
+				count += 1
+	return (goal == state)
+
+def BFS(state):
+	frontier = [state]
+	discovered = set(state)
+	parents = {state: none}
+	while len(frontier) != 0:
+		current_state = frontier.pop(0)
+		discovered.add(current_state)
+		if IsGoal(current_state):
+			print('finished')
+			for i in parents:
+				DebugPrint(i)
+		for neigbor in ComputeNeighbors(current_state):
+			if neigbor[1] not in discovered:
+				frontier.append(neigbor[1])
+				discovered.add(neigbor[1])
+				parents[neigbor[1]] = current_state
+
 
 
 p = LoadFromFile('testText')
@@ -116,6 +147,6 @@ DebugPrint(p)
 n2 = ComputeNeighbors(p)
 print(n2)
 DebugPrint(n2[0][1])
-DebugPrint(n2[1][1])
+BFS(p)
 
 

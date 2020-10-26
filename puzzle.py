@@ -6,7 +6,6 @@ def DebugPrint(state):
 		for j in i:
 			row += j + '\t'
 		row = row[:-1]
-		print(row)
 
 
 def LoadFromFile(filepath):
@@ -16,7 +15,6 @@ def LoadFromFile(filepath):
 		for line in f:
 			if count == -1:
 				n = int(line)
-				print (n)
 				for i in range(n):
 					puzzle.append([])
 				count += 1
@@ -37,7 +35,6 @@ def LoadFromFile(filepath):
 						line = line[line.index('\t') +1:]
 				count +=1
 	for i in puzzle:
-		print(len(i))
 		if len(i) != n:
 			return None
 	return puzzle
@@ -77,7 +74,7 @@ def ComputeNeighbors(state):
 			pairs.append(findPair(state, x, y, x-1, y))
 			pairs.append(findPair(state, x, y, x, y-1))
 		else:
-			paris.append(findPair(state, x, y, x-1, y))
+			pairs.append(findPair(state, x, y, x-1, y))
 			pairs.append(findPair(state, x, y, x, y + 1))
 			pairs.append(findPair(state, x, y, x, y-1))
 	elif x == 0:
@@ -89,7 +86,7 @@ def ComputeNeighbors(state):
 			pairs.append(findPair(state, x, y, x+1, y))
 			pairs.append(findPair(state, x, y, x, y-1))
 		else:
-			paris.append(findPair(state, x, y, x+1, y))
+			pairs.append(findPair(state, x, y, x+1, y))
 			pairs.append(findPair(state, x, y, x, y + 1))
 			pairs.append(findPair(state, x, y, x, y-1))
 	else:
@@ -107,8 +104,7 @@ def ComputeNeighbors(state):
 			pairs.append(findPair(state, x, y, x+1, y))
 			pairs.append(findPair(state, x, y, x, y-1))
 	return pairs
-
-def isGoal(state):
+def findGoal(state):
 	goal = []
 	count= 1
 	n = len(state)
@@ -120,33 +116,101 @@ def isGoal(state):
 			else:
 				goal[i].append(str(count))
 				count += 1
-	return (goal == state)
+	return goal
+
+def isGoal(state):
+	return (findGoal(state) == state)
+
+def makeTupleState(state):
+	tupleState = []
+	for i in state:
+		tupleState.append(tuple(i))
+	return tuple(tupleState)
 
 def BFS(state):
 	frontier = [state]
-	discovered = set(state)
-	parents = {state: none}
+	discovered = set(makeTupleState(state))
+	parents = {makeTupleState(state): None}
 	while len(frontier) != 0:
 		current_state = frontier.pop(0)
-		discovered.add(current_state)
-		if IsGoal(current_state):
-			print('finished')
-			for i in parents:
-				DebugPrint(i)
-		for neigbor in ComputeNeighbors(current_state):
-			if neigbor[1] not in discovered:
-				frontier.append(neigbor[1])
-				discovered.add(neigbor[1])
-				parents[neigbor[1]] = current_state
+		discovered.add(makeTupleState(current_state))
+		if isGoal(current_state):
+			cs = current_state
+			answer = []
+			while parents[makeTupleState(cs)] != None:
+				answer.append(cs)
+				cs = parents[makeTupleState(cs)]
+			answer.append(cs)
+			return answer
+		for neighbor in ComputeNeighbors(current_state):
+			if makeTupleState(neighbor[1]) not in discovered:
+				frontier.append(neighbor[1])
+				discovered.add(makeTupleState(neighbor[1]))
+				parents[makeTupleState(neighbor[1])] = current_state
+
+def DFS(state):
+	frontier = [state]
+	discovered = set(makeTupleState(state))
+	parents = {makeTupleState(state): None}
+	while len(frontier) !=  0:
+		current_state = frontier.pop()
+		discovered.add(makeTupleState(current_state))
+		if isGoal(current_state):
+			cs = current_state
+			answer = []
+			while parents[makeTupleState(cs)] != None:
+				answer.append(cs)
+				cs = parents[makeTupleState(cs)]
+			answer.append(cs)
+			return answer[1:]	 
+		for neighbor in ComputeNeighbors(current_state):
+			if makeTupleState(neighbor[1]) not in discovered:
+				discovered.add(makeTupleState(neighbor[1]))
+				frontier.append(neighbor[1])
+				parents[makeTupleState(neighbor[1])] = current_state
 
 
 
-p = LoadFromFile('testText')
-print(p)
-DebugPrint(p)
-n2 = ComputeNeighbors(p)
-print(n2)
-DebugPrint(n2[0][1])
-BFS(p)
-
+def BDS(state):
+	goalState = findGoal(state)
+	frontier = [state]
+	rFrontier = [goalState]
+	discovered = set(makeTupleState(state))
+	rDiscovered = set(makeTupleState(goalState))
+	rParents = {makeTupleState(goalState): None}
+	parents = {makeTupleState(state): None}
+	while len(frontier) != 0 and len(rFrontier) != 0:
+		current_state = frontier.pop(0)
+		discovered.add(makeTupleState(current_state))
+		for i in discovered:
+			if i in rDiscovered:
+				cs = current_state
+				answer = []
+				while parents[makeTupleState(cs)] != None:
+					answer.append(cs)
+					cs = parents[makeTupleState(cs)]
+				answer.append(cs)
+				rcs = rCurrent_state
+				rAnswer = []
+				while rParents[makeTupleState(rcs)]:
+					rAnswer.append(rcs)
+					rcs = rParents[makeTupleState(rcs)]
+				rAnswer.append(rcs)
+				answer.reverse()
+				return answer + rAnswer
+		rCurrent_state = rFrontier.pop(0)
+		rDiscovered.add(makeTupleState(rCurrent_state))
+		for i in discovered:
+			if i in rDiscovered:
+				return i
+		for neighbor in ComputeNeighbors(current_state):
+			if makeTupleState(neighbor[1]) not in discovered:
+				discovered.add(makeTupleState(neighbor[1]))
+				frontier.append(neighbor[1])
+				parents[makeTupleState(neighbor[1])] = current_state
+		for neighbor in ComputeNeighbors(rCurrent_state):
+			if makeTupleState(neighbor[1]) not in rDiscovered:
+				rDiscovered.add(makeTupleState(neighbor[1]))
+				rFrontier.append(neighbor[1])
+				rParents[makeTupleState(neighbor[1])] = rCurrent_state
 
